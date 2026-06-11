@@ -2,6 +2,8 @@
 
 https://github.com/user-attachments/assets/542c333c-c26e-4f04-a5bb-2cf4131e60f3
 
+Forked by [skale.dev](https://skale.dev) — inspired by [@mariozechner/jot](https://github.com/badlogic/jot)
+
 Minimal self-hosted collaborative markdown editor with inline comment threads. Built for humans and agents.
 
 ## Quick Start
