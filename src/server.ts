@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
+import { createSlug } from "./slugs.js";
 
 import express, { type NextFunction, type Request, type Response } from "express";
 import { WebSocketServer, type WebSocket } from "ws";
@@ -1449,7 +1450,9 @@ function writeJson(filePath: string, value: unknown) {
 
 function createNote() {
   const timestamp = nowIso();
-  const id = createShortId();
+  let id = createSlug();
+  // ensure uniqueness (collision extremely unlikely with ~2M combinations)
+  while (notes.has(id)) id = createSlug();
   const note: NoteRecord = {
     id,
     title: "untitled",
