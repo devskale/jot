@@ -81,7 +81,7 @@ async function checkForUpdate(force = false) {
     if (!resp.ok) return check;
     const data = await resp.json();
     const remoteCommit = data.sha?.slice(0, 7);
-    const localCommit = getLocalCommit();
+    const localCommit = getLocalCommit()?.slice(0, 7);
 
     const result = {
       lastCheck: now,
@@ -159,7 +159,7 @@ if (!command) {
 }
 
 if (command === "--version" || command === "version") {
-  const localCommit = getLocalCommit();
+  const localCommit = getLocalCommit()?.slice(0, 7);
   const check = loadUpdateCheck();
   const remoteInfo = check.remoteCommit ? ` (latest: ${check.remoteCommit})` : "";
   console.log(`toj v${TOJ_VERSION}${localCommit ? ` (${localCommit})` : ""}${remoteInfo}`);
@@ -197,11 +197,66 @@ if (command === "--update" || command === "update") {
   }
   console.log(`Updating ${result.localCommit} → ${result.remoteCommit}...`);
   try {
-    execSync(`npm uninstall -g toj`, { stdio: "pipe" });
-    execSync(`npm install -g "git+https://github.com/${UPDATE_REPO}.git#${UPDATE_BRANCH}"`, { stdio: "inherit" });
+    const npmRoot = execSync(`npm root -g`, { encoding: "utf8" }).trim();
+    const npmBin = path.join(path.dirname(npmRoot), "bin");
+    const tojModulePath = path.join(npmRoot, "toj");
+    const tojBinPath = path.join(npmBin, "toj");
+    console.log(`  npm root: ${npmRoot}`);
+    console.log(`  npm bin:  ${npmBin}`);
+
+    // Step 1: Clean up any broken leftover symlinks from a previous failed install
+    // (Known npm bug: `npm install -g git+https://...` leaves broken symlinks on macOS)
+    console.log(`  [1/4] Cleaning up stale state...`);
+    let cleanedSymlink = false;
+    try {
+      const stat = fs.lstatSync(tojModulePath);
+      if (stat.isSymbolicLink()) {
+        try { fs.statSync(tojModulePath); } catch {
+          console.log(`  🧹 Removing broken symlink: ${tojModulePath}`);
+          fs.unlinkSync(tojModulePath);
+          cleanedSymlink = true;
+        }
+      }
+    } catch { /* doesn't exist, fine */ }
+    try {
+      const binStat = fs.lstatSync(tojBinPath);
+      if (binStat.isSymbolicLink()) {
+        try { fs.statSync(tojBinPath); } catch {
+          console.log(`  🧹 Removing broken bin symlink: ${tojBinPath}`);
+          fs.unlinkSync(tojBinPath);
+          cleanedSymlink = true;
+        }
+      }
+    } catch { /* doesn't exist, fine */ }
+    if (!cleanedSymlink) console.log(`  ✓ No stale symlinks found.`);
+
+    // Step 2: Uninstall any existing install (best-effort)
+    console.log(`  [2/4] Uninstalling previous version...`);
+    try { execSync(`npm uninstall -g toj`, { stdio: "pipe" }); console.log(`  ✓ Uninstalled.`); } catch { console.log(`  ✓ Nothing to uninstall.`); }
+
+    // Step 3: Clone to temp dir (avoids npm git+https broken symlink bug on macOS)
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "toj-update-"));
+    console.log(`  [3/4] Cloning ${UPDATE_REPO}#${UPDATE_BRANCH} → ${tmpDir}`);
+    execSync(`git clone --depth 1 -b ${UPDATE_BRANCH} https://github.com/${UPDATE_REPO}.git ${tmpDir}`, { stdio: "inherit" });
+
+    // Step 4: Install from local clone
+    console.log(`  [4/4] Installing from ${tmpDir}...`);
+    execSync(`npm install -g "${tmpDir}"`, { stdio: "inherit" });
+
+    // Verify install
+    try {
+      const installed = execSync(`toj --version`, { encoding: "utf8" }).trim();
+      console.log(`  ✓ Verified: ${installed}`);
+    } catch {
+      console.log(`  ⚠ Could not verify install (toj --version failed)`);
+    }
+
+    // Cleanup temp dir
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+
     console.log(`✓ Updated to ${result.remoteCommit}.`);
   } catch (e) {
-    console.error("✗ Update failed.");
+    console.error("✗ Update failed:", e.message);
     process.exit(1);
   }
   process.exit(0);
