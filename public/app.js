@@ -954,7 +954,7 @@
   }
 
   function openAgentModal(refs) {
-    const baseUrl = `${location.protocol}//${location.host}`;
+    const baseUrl = `${location.protocol}//${location.host}${location.pathname.replace(/\/(notes|s)\/[^/]*$/, "")}`;
     const currentNoteId = state.note?.id || "<note-id>";
     const isOwnerView = state.viewer?.isOwner;
 
@@ -964,7 +964,7 @@
         `# Your user wants you to interact with a jot note using the CLI below.`,
         `# Run the commands as needed to read, edit, and comment on the note.`,
         ``,
-        `npm install -g @mariozechner/jot`,
+        `npm install -g @devskale/jot`,
         ``,
         `# Connect`,
         `toj register my-jot ${baseUrl} <YOUR_API_KEY>`,
@@ -1005,7 +1005,7 @@
         `# Your user wants you to interact with a shared jot note using the CLI below.`,
         `# Run the commands as needed to read, edit, and comment on the note.`,
         ``,
-        `npm install -g @mariozechner/jot`,
+        `npm install -g @devskale/jot`,
         ``,
         `# Connect to the shared note`,
         `toj register my-jot ${shareUrl}`,
