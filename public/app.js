@@ -384,6 +384,19 @@
       agentButton.addEventListener("click", () => openAgentModal(refs));
     }
 
+    const copyButton = document.getElementById("copyButton");
+    if (copyButton) {
+      copyButton.addEventListener("click", async () => {
+        const md = state.note?.markdown || "";
+        const text = `# ${state.note?.title || "untitled"}\n\n${md}`;
+        try {
+          await navigator.clipboard.writeText(text);
+          copyButton.setAttribute("label", "Copied!");
+          setTimeout(() => copyButton.setAttribute("label", "Copy note"), 1500);
+        } catch {}
+      });
+    }
+
     if (resolvedButton) {
       resolvedButton.addEventListener("click", () => {
         state.showResolved = !state.showResolved;
@@ -781,6 +794,7 @@
           </div>
           <div class="topbar-right">
             <jot-icon-button icon="preview" label="Preview" id="previewFab"></jot-icon-button>
+            <jot-icon-button icon="copy" label="Copy note" id="copyButton"></jot-icon-button>
             <jot-icon-button icon="robot" label="Agent setup" id="agentButton"></jot-icon-button>
             <div class="share-popover-wrap" id="sharePopoverWrap">
               <jot-icon-button icon="share" label="Share" id="shareButton"></jot-icon-button>
@@ -869,6 +883,7 @@
           </div>
           <div class="topbar-right">
             <jot-icon-button icon="preview" label="Preview" id="previewFab"></jot-icon-button>
+            <jot-icon-button icon="copy" label="Copy note" id="copyButton"></jot-icon-button>
             <jot-icon-button icon="robot" label="Agent setup" id="agentButton"></jot-icon-button>
             <button type="button" class="jot-btn-icon jot-btn-icon--md theme-toggle" aria-label="Toggle theme">${themeIcon(document.documentElement.getAttribute("data-theme") || "dark")}</button>
           </div>
