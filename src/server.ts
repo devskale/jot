@@ -2098,6 +2098,9 @@ function canManageThread(req: Request, thread: CommentThread) {
   return Boolean(commenter.id && thread.messages.some((message) => message.authorId === commenter.id));
 }
 
+const VERSION = "0.1.2-skale";
+const FOOTER_HTML = `<footer class="app-footer"><a href="https://skale.dev" target="_blank" rel="noopener">skale.dev</a> &middot; v${VERSION}</footer>`;
+
 function renderSimplePage(title: string, body: string) {
   return `<!doctype html>
 <html lang="en">
@@ -2110,6 +2113,7 @@ function renderSimplePage(title: string, body: string) {
   </head>
   <body class="page-shell simple-page">
     <main class="simple-page-content">${body}</main>
+    ${FOOTER_HTML}
   </body>
 </html>`;
 }
@@ -2152,8 +2156,9 @@ function renderAuthPage(mode: "login" | "setup") {
     <script>window.__OWNER_TOKEN_KEY__ = ${JSON.stringify(ownerLocalStorageTokenKey)};</script>
     <script>document.querySelectorAll('.theme-toggle').forEach(function(b){b.innerHTML=window.__themeIcon(document.documentElement.getAttribute('data-theme')||'dark')});</script>
     <script src="/static/login.js" defer></script>
+    ${FOOTER_HTML}
   </body>
-</html>`;
+</html`;
 }
 
 function renderAppShell(
@@ -2195,6 +2200,7 @@ function renderAppShell(
         : ""
     }
     <script src="/static/app.js" defer></script>
+    ${FOOTER_HTML}
   </body>
-</html>`;
+</html`;
 }

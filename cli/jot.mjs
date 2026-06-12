@@ -31,6 +31,15 @@ function getInstance(name) {
   return instance;
 }
 
+function hasInsecureFlag() {
+  return process.argv.includes("--insecure");
+}
+
+// Apply --insecure globally so all fetch() calls bypass self-signed certs
+if (hasInsecureFlag()) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
+
 async function request(instance, method, endpoint, body) {
   const url = `${instance.baseUrl.replace(/\/$/, "")}${endpoint}`;
   const options = {
@@ -48,14 +57,19 @@ async function request(instance, method, endpoint, body) {
   }
 
   const response = await fetch(url, options);
-  const payload = await response.json();
 
   if (!response.ok) {
+    let payload;
+    try { payload = await response.json(); } catch { payload = {}; }
     console.error(`Error ${response.status}: ${payload.error || payload.errors?.join(", ") || "Request failed"}`);
+    if (response.status === 0 || response.status >= 500) {
+      console.error(`Hint: Is the server running at ${instance.baseUrl}?`);
+      console.error(`Hint: Self-signed cert? Try --insecure flag.`);
+    }
     process.exit(1);
   }
 
-  return payload;
+  return await response.json();
 }
 
 function isShareInstance(instance) {
@@ -100,6 +114,20 @@ if (command === "register") {
   }
 
   const config = loadConfig();
+
+  // Warn if overwriting existing instance with same name
+  const existing = config.instances.find((i) => i.name === name);
+  if (existing) {
+    console.log(`⚠ Instance "${name}" already exists: ${existing.baseUrl}`);
+    console.log(`  Updating to: ${urlOrBase}`);
+  }
+
+  // Check for duplicate baseUrl under different name
+  const duplicate = config.instances.find((i) => i.name !== name && i.baseUrl === urlOrBase.replace(/\/$/, ""));
+  if (duplicate) {
+    console.log(`⚠ Warning: Same URL already registered as "${duplicate.name}"`);
+  }
+
   config.instances = config.instances.filter((i) => i.name !== name);
 
   const shareMatch = urlOrBase.match(/^(https?:\/\/.+)\/s\/([a-z0-9]+)$/i);
@@ -112,6 +140,42 @@ if (command === "register") {
       console.error("Usage: jot register <name> <baseUrl> <token>");
       process.exit(1);
     }
+
+    // Validate URL is reachable
+    const baseUrl = urlOrBase.replace(/\/$/, "");
+    try {
+      const checkUrl = `${baseUrl}/api/notes`;
+      const checkResp = await fetch(checkUrl, {
+        method: "HEAD",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (checkResp.ok) {
+        console.log(`✓ Server reachable, API key valid`);
+      } else if (checkResp.status === 401 || checkResp.status === 403) {
+        console.error(`✗ Server reachable but API key rejected (${checkResp.status})`);
+        console.error(`  URL: ${checkUrl}`);
+        process.exit(1);
+      } else {
+        // Could be HTML page (wrong path) or other error
+        const contentType = checkResp.headers.get("content-type") || "";
+        if (contentType.includes("text/html") && !baseUrl.includes("/jot")) {
+          console.error(`✗ Got HTML instead of JSON. Is the baseUrl missing the path prefix?`);
+          console.error(`  Try: jot register ${name} ${baseUrl}/jot <token>`);
+          process.exit(1);
+        }
+        // Server might just not support HEAD on that endpoint, continue
+        console.log(`⚠ Server responded with ${checkResp.status} — registering anyway`);
+      }
+    } catch (err) {
+      const msg = err.cause?.code || err.message || String(err);
+      console.error(`✗ Cannot reach ${baseUrl}: ${msg}`);
+      if (msg.includes("certificate") || msg.includes("CERT") || msg.includes("UNABLE_TO_VERIFY")) {
+        console.error(`  Self-signed cert? Retry with --insecure:`);
+        console.error(`  jot --insecure register ${name} ${urlOrBase} <token>`);
+      }
+      process.exit(1);
+    }
+
     config.instances.push({ name, baseUrl: urlOrBase, token });
     saveConfig(config);
     console.log(`Registered instance "${name}" at ${urlOrBase}`);
@@ -506,7 +570,10 @@ switch (subCommand) {
 } // end owner mode
 
 function printUsage() {
-  console.log(`Usage: jot <command> [args...]
+  console.log(`Usage: jot <command> [args...] [--insecure]
+
+Global flags:
+  --insecure          Skip TLS certificate verification (self-signed certs)
 
 Server:
   jot serve [--port=N] [--data=path]      Run the jot server

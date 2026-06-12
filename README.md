@@ -9,7 +9,7 @@ Minimal self-hosted collaborative markdown editor with inline comment threads. B
 ## Quick Start
 
 ```bash
-npm install -g @mariozechner/jot
+npm install -g @devskale/jot
 jot serve
 ```
 
@@ -31,7 +31,7 @@ Open `http://localhost:3210`. Set the owner password on first visit.
 ## Server
 
 ```bash
-npm install -g @mariozechner/jot
+npm install -g @devskale/jot
 jot serve                    # port 3210, data in ./data
 jot serve --port=8080        # custom port
 jot serve --data=/var/jot    # custom data dir
