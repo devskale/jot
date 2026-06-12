@@ -2,7 +2,7 @@
   "name": "@devskale/jot",
   "version": "0.1.2",
   "bin": {
-    "jot": "cli/jot.mjs"
+    "toj": "cli/jot.mjs"
   },
   "files": [
     "dist",

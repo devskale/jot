@@ -1369,7 +1369,7 @@ function broadcastPresenceLeave(sender: ClientConn) {
 }
 
 server.listen(port, () => {
-  console.log(`jot listening on http://localhost:${port}`);
+  console.log(`toj listening on http://localhost:${port}`);
   console.log(`data: ${path.resolve(dataDir)}`);
 });
 

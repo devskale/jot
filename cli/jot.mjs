@@ -25,7 +25,7 @@ function getInstance(name) {
   const instance = config.instances.find((i) => i.name === name);
   if (!instance) {
     console.error(`Unknown instance: ${name}`);
-    console.error(`Run: jot register <name> <baseUrl> <token>`);
+    console.error(`Run: toj register <name> <baseUrl> <token>`);
     process.exit(1);
   }
   return instance;
@@ -108,8 +108,8 @@ if (command === "serve") {
 if (command === "register") {
   const [, name, urlOrBase, token] = args;
   if (!name || !urlOrBase) {
-    console.error("Usage: jot register <name> <baseUrl> <token>");
-    console.error("       jot register <name> <shareUrl>");
+    console.error("Usage: toj register <name> <baseUrl> <token>");
+    console.error("       toj register <name> <shareUrl>");
     process.exit(1);
   }
 
@@ -137,7 +137,7 @@ if (command === "register") {
     console.log(`Registered shared instance "${name}" at ${shareMatch[1]}`);
   } else {
     if (!token) {
-      console.error("Usage: jot register <name> <baseUrl> <token>");
+      console.error("Usage: toj register <name> <baseUrl> <token>");
       process.exit(1);
     }
 
@@ -171,7 +171,7 @@ if (command === "register") {
       console.error(`✗ Cannot reach ${baseUrl}: ${msg}`);
       if (msg.includes("certificate") || msg.includes("CERT") || msg.includes("UNABLE_TO_VERIFY")) {
         console.error(`  Self-signed cert? Retry with --insecure:`);
-        console.error(`  jot --insecure register ${name} ${urlOrBase} <token>`);
+        console.error(`  toj --insecure register ${name} ${urlOrBase} <token>`);
       }
       process.exit(1);
     }
@@ -186,7 +186,7 @@ if (command === "register") {
 if (command === "unregister") {
   const name = args[1];
   if (!name) {
-    console.error("Usage: jot unregister <name>");
+    console.error("Usage: toj unregister <name>");
     process.exit(1);
   }
 
@@ -219,7 +219,7 @@ const instanceName = command;
 const subCommand = args[1];
 
 if (!subCommand) {
-  console.error(`Usage: jot <instance> <command> [args...]`);
+  console.error(`Usage: toj <instance> <command> [args...]`);
   console.error(`Commands: list, search, read, create, edit, delete, update`);
   process.exit(1);
 }
@@ -261,7 +261,7 @@ if (isShareInstance(instance)) {
     case "edit": {
       const editsJson = plainArgs[2];
       if (!editsJson) {
-        console.error("Usage: jot <instance> edit '<json edits>'");
+        console.error("Usage: toj <instance> edit '<json edits>'");
         process.exit(1);
       }
       let edits;
@@ -275,7 +275,7 @@ if (isShareInstance(instance)) {
       const quote = plainArgs[2];
       const body = plainArgs.slice(3).join(" ");
       if (!quote || !body) {
-        console.error('Usage: jot <instance> comment <quote> <body>');
+        console.error('Usage: toj <instance> comment <quote> <body>');
         process.exit(1);
       }
       const payload = await request(instance, "POST", `/api/share/${sid}/threads`, { anchor: { quote, prefix: "", suffix: "", start: 0, end: 0 }, body, name: agentName });
@@ -288,7 +288,7 @@ if (isShareInstance(instance)) {
       const messageId = plainArgs[3];
       const body = plainArgs.slice(4).join(" ");
       if (!threadId || !messageId || !body) {
-        console.error("Usage: jot <instance> reply <threadId> <messageId> <body>");
+        console.error("Usage: toj <instance> reply <threadId> <messageId> <body>");
         process.exit(1);
       }
       await request(instance, "POST", `/api/share/${sid}/threads/${threadId}/replies`, { body, name: agentName, parentMessageId: messageId });
@@ -315,7 +315,7 @@ switch (subCommand) {
   case "search": {
     const query = args.slice(2).join(" ");
     if (!query) {
-      console.error("Usage: jot <instance> search <query>");
+      console.error("Usage: toj <instance> search <query>");
       process.exit(1);
     }
     const payload = await request(instance, "GET", `/api/notes?q=${encodeURIComponent(query)}`);
@@ -328,7 +328,7 @@ switch (subCommand) {
   case "read": {
     const noteId = args[2];
     if (!noteId) {
-      console.error("Usage: jot <instance> read <id> [--offset=N] [--limit=M]");
+      console.error("Usage: toj <instance> read <id> [--offset=N] [--limit=M]");
       process.exit(1);
     }
 
@@ -391,8 +391,8 @@ switch (subCommand) {
     const quote = args[3];
     const body = args.slice(4).join(" ");
     if (!noteId || !quote || !body) {
-      console.error("Usage: jot <instance> comment <id> <quote> <body>");
-      console.error('Example: jot myserver comment abc123 "some text" "my comment"');
+      console.error("Usage: toj <instance> comment <id> <quote> <body>");
+      console.error('Example: toj myserver comment abc123 "some text" "my comment"');
       process.exit(1);
     }
     const payload = await request(instance, "POST", `/api/notes/${noteId}/threads`, { quote, body });
@@ -406,7 +406,7 @@ switch (subCommand) {
     const messageId = args[4];
     const body = args.slice(5).join(" ");
     if (!noteId || !threadId || !messageId || !body) {
-      console.error("Usage: jot <instance> reply <noteId> <threadId> <messageId> <body>");
+      console.error("Usage: toj <instance> reply <noteId> <threadId> <messageId> <body>");
       process.exit(1);
     }
     await request(instance, "POST", `/api/notes/${noteId}/threads/${threadId}/replies`, { body, parentMessageId: messageId });
@@ -418,7 +418,7 @@ switch (subCommand) {
     const noteId = args[2];
     const threadId = args[3];
     if (!noteId || !threadId) {
-      console.error("Usage: jot <instance> resolve <noteId> <threadId>");
+      console.error("Usage: toj <instance> resolve <noteId> <threadId>");
       process.exit(1);
     }
     await request(instance, "PATCH", `/api/notes/${noteId}/threads/${threadId}`, { resolved: true });
@@ -430,7 +430,7 @@ switch (subCommand) {
     const noteId = args[2];
     const threadId = args[3];
     if (!noteId || !threadId) {
-      console.error("Usage: jot <instance> reopen <noteId> <threadId>");
+      console.error("Usage: toj <instance> reopen <noteId> <threadId>");
       process.exit(1);
     }
     await request(instance, "PATCH", `/api/notes/${noteId}/threads/${threadId}`, { resolved: false });
@@ -442,7 +442,7 @@ switch (subCommand) {
     const noteId = args[2];
     const threadId = args[3];
     if (!noteId || !threadId) {
-      console.error("Usage: jot <instance> delete-thread <noteId> <threadId>");
+      console.error("Usage: toj <instance> delete-thread <noteId> <threadId>");
       process.exit(1);
     }
     await request(instance, "DELETE", `/api/notes/${noteId}/threads/${threadId}`);
@@ -455,7 +455,7 @@ switch (subCommand) {
     const messageId = args[3];
     const body = args.slice(4).join(" ");
     if (!noteId || !messageId || !body) {
-      console.error("Usage: jot <instance> edit-comment <noteId> <messageId> <body>");
+      console.error("Usage: toj <instance> edit-comment <noteId> <messageId> <body>");
       process.exit(1);
     }
     await request(instance, "PATCH", `/api/notes/${noteId}/messages/${messageId}`, { body });
@@ -467,7 +467,7 @@ switch (subCommand) {
     const noteId = args[2];
     const messageId = args[3];
     if (!noteId || !messageId) {
-      console.error("Usage: jot <instance> delete-comment <noteId> <messageId>");
+      console.error("Usage: toj <instance> delete-comment <noteId> <messageId>");
       process.exit(1);
     }
     await request(instance, "DELETE", `/api/notes/${noteId}/messages/${messageId}`);
@@ -479,8 +479,8 @@ switch (subCommand) {
     const noteId = args[2];
     const editsJson = args[3];
     if (!noteId || !editsJson) {
-      console.error("Usage: jot <instance> edit <id> '<json edits>'");
-      console.error('Example: jot myserver edit abc123 \'[{"oldText":"hello","newText":"world"}]\'');
+      console.error("Usage: toj <instance> edit <id> '<json edits>'");
+      console.error('Example: toj myserver edit abc123 \'[{"oldText":"hello","newText":"world"}]\'');
       process.exit(1);
     }
 
@@ -501,7 +501,7 @@ switch (subCommand) {
     const noteId = args[2];
     const access = args[3];
     if (!noteId) {
-      console.error("Usage: jot <instance> share <id> [none|view|comment|edit]");
+      console.error("Usage: toj <instance> share <id> [none|view|comment|edit]");
       process.exit(1);
     }
     if (!access) {
@@ -525,8 +525,8 @@ switch (subCommand) {
     const field = args[3];
     const value = args.slice(4).join(" ");
     if (!noteId || !field || !value) {
-      console.error("Usage: jot <instance> update <id> title <value>");
-      console.error("       jot <instance> update <id> markdown <value>");
+      console.error("Usage: toj <instance> update <id> title <value>");
+      console.error("       toj <instance> update <id> markdown <value>");
       process.exit(1);
     }
 
@@ -553,7 +553,7 @@ switch (subCommand) {
   case "delete": {
     const noteId = args[2];
     if (!noteId) {
-      console.error("Usage: jot <instance> delete <id>");
+      console.error("Usage: toj <instance> delete <id>");
       process.exit(1);
     }
     await request(instance, "DELETE", `/api/notes/${noteId}`);
@@ -570,42 +570,42 @@ switch (subCommand) {
 } // end owner mode
 
 function printUsage() {
-  console.log(`Usage: jot <command> [args...] [--insecure]
+  console.log(`Usage: toj <command> [args...] [--insecure]
 
 Global flags:
   --insecure          Skip TLS certificate verification (self-signed certs)
 
 Server:
-  jot serve [--port=N] [--data=path]      Run the jot server
+  toj serve [--port=N] [--data=path]      Run the jot server
 
 Instance management:
-  jot register <name> <baseUrl> <token>   Register with API key (owner)
-  jot register <name> <shareUrl>          Register with share link
-  jot unregister <name>                   Remove a registered instance
-  jot instances                           List registered instances
+  toj register <name> <baseUrl> <token>   Register with API key (owner)
+  toj register <name> <shareUrl>          Register with share link
+  toj unregister <name>                   Remove a registered instance
+  toj instances                           List registered instances
 
 Owner commands:
-  jot <instance> list                     List all notes
-  jot <instance> search <query>           Search notes
-  jot <instance> read <id>                Read a note with comments
-  jot <instance> create [title]           Create a new note
-  jot <instance> share <id> [access]      Get/set share access (none|view|comment|edit)
-  jot <instance> comment <id> <quote> <b> Comment on quoted text
-  jot <instance> reply <id> <tid> <mid> b  Reply to a specific message
-  jot <instance> resolve <id> <tid>        Resolve a thread
-  jot <instance> reopen <id> <tid>         Reopen a thread
-  jot <instance> edit-comment <id> <mid> b Edit a comment
-  jot <instance> delete-comment <id> <mid> Delete a comment
-  jot <instance> delete-thread <id> <tid>  Delete a thread
-  jot <instance> edit <id> '<edits>'       Apply edits (JSON array of {oldText, newText})
-  jot <instance> update <id> title <val>   Update note title
-  jot <instance> update <id> markdown <v>  Replace full markdown
-  jot <instance> delete <id>               Delete a note
+  toj <instance> list                     List all notes
+  toj <instance> search <query>           Search notes
+  toj <instance> read <id>                Read a note with comments
+  toj <instance> create [title]           Create a new note
+  toj <instance> share <id> [access]      Get/set share access (none|view|comment|edit)
+  toj <instance> comment <id> <quote> <b> Comment on quoted text
+  toj <instance> reply <id> <tid> <mid> b  Reply to a specific message
+  toj <instance> resolve <id> <tid>        Resolve a thread
+  toj <instance> reopen <id> <tid>         Reopen a thread
+  toj <instance> edit-comment <id> <mid> b Edit a comment
+  toj <instance> delete-comment <id> <mid> Delete a comment
+  toj <instance> delete-thread <id> <tid>  Delete a thread
+  toj <instance> edit <id> '<edits>'       Apply edits (JSON array of {oldText, newText})
+  toj <instance> update <id> title <val>   Update note title
+  toj <instance> update <id> markdown <v>  Replace full markdown
+  toj <instance> delete <id>               Delete a note
 
 Shared note commands:
-  jot <instance> read                     Read the shared note
-  jot <instance> edit '<edits>'           Edit (if edit access)
-  jot <instance> comment <quote> <body>   Comment on text
-  jot <instance> reply <tid> <mid> <body> Reply to a specific message
+  toj <instance> read                     Read the shared note
+  toj <instance> edit '<edits>'           Edit (if edit access)
+  toj <instance> comment <quote> <body>   Comment on text
+  toj <instance> reply <tid> <mid> <body> Reply to a specific message
   Use --name="Name" to set display name for comments`);
 }

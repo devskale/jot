@@ -1,4 +1,4 @@
-# jot
+# toj
 
 https://github.com/user-attachments/assets/542c333c-c26e-4f04-a5bb-2cf4131e60f3
 
@@ -9,8 +9,8 @@ Minimal self-hosted collaborative markdown editor with inline comment threads. B
 ## Quick Start
 
 ```bash
-npm install -g @devskale/jot
-jot serve
+npm install -g @devskale/toj
+toj serve
 ```
 
 Open `http://localhost:3210`. Set the owner password on first visit.
@@ -31,10 +31,10 @@ Open `http://localhost:3210`. Set the owner password on first visit.
 ## Server
 
 ```bash
-npm install -g @devskale/jot
-jot serve                    # port 3210, data in ./data
-jot serve --port=8080        # custom port
-jot serve --data=/var/jot    # custom data dir
+npm install -g @devskale/toj
+toj serve                    # port 3210, data in ./data
+toj serve --port=8080        # custom port
+toj serve --data=/var/toj    # custom data dir
 ```
 
 ## Docker
@@ -64,21 +64,21 @@ The CLI works in two modes depending on how you register.
 The instance owner creates API keys from the settings gear on the landing page. An API key grants full access to all notes.
 
 ```bash
-jot register myserver https://jot.example.com <api-key>
-jot myserver list
-jot myserver search "query"
-jot myserver read <note-id>
-jot myserver create "My note"
-jot myserver edit <note-id> '[{"oldText":"foo","newText":"bar"}]'
-jot myserver comment <note-id> "quoted text" "comment body"
-jot myserver reply <note-id> <thread-id> <message-id> "reply"
-jot myserver resolve <note-id> <thread-id>
-jot myserver reopen <note-id> <thread-id>
-jot myserver edit-comment <note-id> <message-id> "new body"
-jot myserver delete-comment <note-id> <message-id>
-jot myserver delete-thread <note-id> <thread-id>
-jot myserver update <note-id> title "New title"
-jot myserver delete <note-id>
+toj register myserver https://toj.example.com <api-key>
+toj myserver list
+toj myserver search "query"
+toj myserver read <note-id>
+toj myserver create "My note"
+toj myserver edit <note-id> '[{"oldText":"foo","newText":"bar"}]'
+toj myserver comment <note-id> "quoted text" "comment body"
+toj myserver reply <note-id> <thread-id> <message-id> "reply"
+toj myserver resolve <note-id> <thread-id>
+toj myserver reopen <note-id> <thread-id>
+toj myserver edit-comment <note-id> <message-id> "new body"
+toj myserver delete-comment <note-id> <message-id>
+toj myserver delete-thread <note-id> <thread-id>
+toj myserver update <note-id> title "New title"
+toj myserver delete <note-id>
 ```
 
 ### Shared mode
@@ -86,11 +86,11 @@ jot myserver delete <note-id>
 Anyone with a share link can use it to register. No API key needed. The link itself is the credential, and access depends on what the owner configured (view, comment, or edit). This works for both humans and their agents. Humans can use the link in the browser for better UX.
 
 ```bash
-jot register shared https://jot.example.com/s/abc123
-jot shared read
-jot shared edit '[{"oldText":"foo","newText":"bar"}]'
-jot shared comment "quoted text" "comment body" --name="My Agent"
-jot shared reply <thread-id> <message-id> "reply" --name="My Agent"
+toj register shared https://toj.example.com/s/abc123
+toj shared read
+toj shared edit '[{"oldText":"foo","newText":"bar"}]'
+toj shared comment "quoted text" "comment body" --name="My Agent"
+toj shared reply <thread-id> <message-id> "reply" --name="My Agent"
 ```
 
 ### Agent integration
