@@ -1,5 +1,5 @@
 {
-  "name": "@devskale/jot",
+  "name": "toj",
   "version": "0.1.2",
   "bin": {
     "toj": "cli/jot.mjs"
@@ -7,12 +7,15 @@
   "files": [
     "dist",
     "public",
-    "cli"
+    "cli",
+    "src",
+    "tsconfig.json"
   ],
-  "description": "Minimal self-hosted markdown editor with inline comment threads",
+  "description": "Minimal self-hosted markdown editor with inline comment threads. Forked by skale.dev.",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "prepare": "npm run build",
     "start": "node dist/server.js"
   },
   "dependencies": {

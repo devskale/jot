@@ -197,7 +197,7 @@ if (command === "--update" || command === "update") {
   }
   console.log(`Updating ${result.localCommit} → ${result.remoteCommit}...`);
   try {
-    execSync(`npm uninstall -g @devskale/jot`, { stdio: "pipe" });
+    execSync(`npm uninstall -g toj`, { stdio: "pipe" });
     execSync(`npm install -g "git+https://github.com/${UPDATE_REPO}.git#${UPDATE_BRANCH}"`, { stdio: "inherit" });
     console.log(`✓ Updated to ${result.remoteCommit}.`);
   } catch (e) {
