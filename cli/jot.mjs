@@ -206,7 +206,7 @@ if (command === "--update" || command === "update") {
 
     // Step 1: Clean up any broken leftover symlinks from a previous failed install
     // (Known npm bug: `npm install -g git+https://...` leaves broken symlinks on macOS)
-    console.log(`  [1/4] Cleaning up stale state...`);
+    console.log(`  [1/5] Cleaning up stale state...`);
     let cleanedSymlink = false;
     try {
       const stat = fs.lstatSync(tojModulePath);
@@ -231,17 +231,25 @@ if (command === "--update" || command === "update") {
     if (!cleanedSymlink) console.log(`  ✓ No stale symlinks found.`);
 
     // Step 2: Uninstall any existing install (best-effort)
-    console.log(`  [2/4] Uninstalling previous version...`);
+    console.log(`  [2/5] Uninstalling previous version...`);
     try { execSync(`npm uninstall -g toj`, { stdio: "pipe" }); console.log(`  ✓ Uninstalled.`); } catch { console.log(`  ✓ Nothing to uninstall.`); }
 
-    // Step 3: Clone to temp dir (avoids npm git+https broken symlink bug on macOS)
+    // Step 3: Clone to temp dir
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "toj-update-"));
-    console.log(`  [3/4] Cloning ${UPDATE_REPO}#${UPDATE_BRANCH} → ${tmpDir}`);
+    console.log(`  [3/5] Cloning ${UPDATE_REPO}#${UPDATE_BRANCH} → ${tmpDir}`);
     execSync(`git clone --depth 1 -b ${UPDATE_BRANCH} https://github.com/${UPDATE_REPO}.git ${tmpDir}`, { stdio: "inherit" });
 
-    // Step 4: Install from local clone
-    console.log(`  [4/4] Installing from ${tmpDir}...`);
-    execSync(`npm install -g "${tmpDir}"`, { stdio: "inherit" });
+    // Step 4: Pack into tarball and install from that (avoids npm symlink bugs on macOS)
+    console.log(`  [4/5] Packing tarball...`);
+    execSync(`npm pack --ignore-scripts`, { cwd: tmpDir, stdio: "pipe" });
+    const tgz = fs.readdirSync(tmpDir).find(f => f.endsWith(".tgz"));
+    if (!tgz) throw new Error("npm pack produced no tarball");
+    const tgzPath = path.join(tmpDir, tgz);
+    console.log(`  [5/5] Installing ${tgz}...`);
+    execSync(`npm install -g "${tgzPath}"`, { stdio: "inherit" });
+
+    // Cleanup temp dir (safe — tarball was copied by npm, not symlinked)
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
 
     // Verify install
     try {
@@ -250,9 +258,6 @@ if (command === "--update" || command === "update") {
     } catch {
       console.log(`  ⚠ Could not verify install (toj --version failed)`);
     }
-
-    // Cleanup temp dir
-    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
 
     console.log(`✓ Updated to ${result.remoteCommit}.`);
   } catch (e) {

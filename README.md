@@ -9,7 +9,12 @@ Minimal self-hosted collaborative markdown editor with inline comment threads. B
 ## Quick Start
 
 ```bash
-npm install -g @devskale/toj
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/devskale/toj/skalify/install.sh | sh
+
+# or manually:
+git clone -b skalify https://github.com/devskale/toj /tmp/toj && cd /tmp/toj && npm pack --ignore-scripts && npm install -g toj-*.tgz
+
 toj serve
 ```
 
@@ -31,7 +36,6 @@ Open `http://localhost:3210`. Set the owner password on first visit.
 ## Server
 
 ```bash
-npm install -g @devskale/toj
 toj serve                    # port 3210, data in ./data
 toj serve --port=8080        # custom port
 toj serve --data=/var/toj    # custom data dir
