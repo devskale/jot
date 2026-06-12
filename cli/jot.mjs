@@ -31,15 +31,6 @@ function getInstance(name) {
   return instance;
 }
 
-function hasInsecureFlag() {
-  return process.argv.includes("--insecure");
-}
-
-// Apply --insecure globally so all fetch() calls bypass self-signed certs
-if (hasInsecureFlag()) {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-}
-
 async function request(instance, method, endpoint, body) {
   const url = `${instance.baseUrl.replace(/\/$/, "")}${endpoint}`;
   const options = {
@@ -76,7 +67,19 @@ function isShareInstance(instance) {
   return Boolean(instance.shareId && !instance.token);
 }
 
-const args = process.argv.slice(2);
+const rawArgs = process.argv.slice(2);
+
+function hasInsecureFlag() {
+  return rawArgs.includes("--insecure");
+}
+
+// Apply --insecure globally so all fetch() calls bypass self-signed certs
+if (hasInsecureFlag()) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
+
+// Strip global flags from args before parsing commands
+const args = rawArgs.filter((a) => a !== "--insecure");
 const command = args[0];
 
 if (!command) {
