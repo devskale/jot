@@ -954,7 +954,7 @@
   }
 
   function openAgentModal(refs) {
-    const baseUrl = `${location.protocol}//${location.host}${location.pathname.replace(/\/(notes|s)\/[^/]*$/, "")}`;
+    const baseUrl = `${location.origin}${location.pathname.replace(/\/(notes|s)\/[^/]*$/, "")}`;
     const currentNoteId = state.note?.id || "<note-id>";
     const isOwnerView = state.viewer?.isOwner;
 
@@ -964,10 +964,19 @@
         `# Your user wants you to interact with a jot note using the CLI below.`,
         `# Run the commands as needed to read, edit, and comment on the note.`,
         ``,
-        `npm install -g @devskale/jot`,
+        `# Install toj`,
+        `# Repo: https://github.com/devskale/toj`,
+        `npm install -g git:github.com:devskale/toj#skalify`,
+        ``,
+        `# Get the API key with credgoo (preferred)`,
+        `# Credgoo: https://github.com/devskale/python-openutils/tree/main/packages/credgoo`,
+        `# Install: uv pip install -r https://skale.dev/credgoo`,
+        `API_KEY=$(credgoo toj.<machine>)  # e.g. toj.lubu, toj.mac`,
+        ``,
+        `# Or use the key directly from jot settings (gear icon → API Keys)`,
         ``,
         `# Connect`,
-        `toj register my-jot ${baseUrl} <YOUR_API_KEY>`,
+        `toj register my-jot ${baseUrl} $API_KEY`,
         ``,
         `# List notes`,
         `toj my-jot list`,
@@ -1005,7 +1014,9 @@
         `# Your user wants you to interact with a shared jot note using the CLI below.`,
         `# Run the commands as needed to read, edit, and comment on the note.`,
         ``,
-        `npm install -g @devskale/jot`,
+        `# Install toj`,
+        `# Repo: https://github.com/devskale/toj`,
+        `npm install -g git:github.com:devskale/toj#skalify`,
         ``,
         `# Connect to the shared note`,
         `toj register my-jot ${shareUrl}`,
