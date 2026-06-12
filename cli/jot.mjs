@@ -4,8 +4,14 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
+const TOJ_VERSION = "0.1.2-skale";
+const UPDATE_REPO = "devskale/toj";
+const UPDATE_BRANCH = "skalify";
+const UPDATE_CHECK_INTERVAL = 7 * 24 * 60 * 60 * 1000; // 7 days
+
 const configDir = path.join(os.homedir(), ".config", "jot");
 const configPath = path.join(configDir, "settings.json");
+const updateCheckPath = path.join(configDir, "update-check.json");
 
 function loadConfig() {
   try {
@@ -29,6 +35,71 @@ function getInstance(name) {
     process.exit(1);
   }
   return instance;
+}
+
+function getLocalCommit() {
+  try {
+    const gitHead = path.join(new URL(import.meta.url).pathname, "..", "..", ".git", "HEAD");
+    if (!fs.existsSync(gitHead)) return null;
+    const head = fs.readFileSync(gitHead, "utf8").trim();
+    if (head.startsWith("ref:")) {
+      const refPath = path.join(new URL(import.meta.url).pathname, "..", "..", ".git", head.split(" ")[1]);
+      if (fs.existsSync(refPath)) return fs.readFileSync(refPath, "utf8").trim();
+    }
+    return head;
+  } catch { return null; }
+}
+
+function loadUpdateCheck() {
+  try {
+    return JSON.parse(fs.readFileSync(updateCheckPath, "utf8"));
+  } catch { return {}; }
+}
+
+function saveUpdateCheck(data) {
+  fs.mkdirSync(configDir, { recursive: true });
+  fs.writeFileSync(updateCheckPath, JSON.stringify(data, null, 2) + "\n", "utf8");
+}
+
+async function checkForUpdate(force = false) {
+  const check = loadUpdateCheck();
+  const now = Date.now();
+
+  if (!force && check.lastCheck && (now - check.lastCheck) < UPDATE_CHECK_INTERVAL) {
+    // Cached result still valid
+    if (check.updateAvailable) {
+      console.log(`📦 Update available! Run: toj --update`);
+    }
+    return check;
+  }
+
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${UPDATE_REPO}/commits/${UPDATE_BRANCH}`,
+      { headers: { "User-Agent": "toj-selfupdate" }, signal: AbortSignal.timeout(5000) }
+    );
+    if (!resp.ok) return check;
+    const data = await resp.json();
+    const remoteCommit = data.sha?.slice(0, 7);
+    const localCommit = getLocalCommit();
+
+    const result = {
+      lastCheck: now,
+      remoteCommit,
+      localCommit,
+      updateAvailable: remoteCommit && localCommit && remoteCommit !== localCommit,
+    };
+
+    saveUpdateCheck(result);
+
+    if (result.updateAvailable) {
+      console.log(`📦 Update available! (${localCommit} → ${remoteCommit}) Run: toj --update`);
+    }
+    return result;
+  } catch {
+    // Network error, skip silently
+    return check;
+  }
 }
 
 async function request(instance, method, endpoint, body) {
@@ -87,6 +158,14 @@ if (!command) {
   process.exit(0);
 }
 
+if (command === "--version" || command === "version") {
+  const localCommit = getLocalCommit();
+  const check = loadUpdateCheck();
+  const remoteInfo = check.remoteCommit ? ` (latest: ${check.remoteCommit})` : "";
+  console.log(`toj v${TOJ_VERSION}${localCommit ? ` (${localCommit})` : ""}${remoteInfo}`);
+  process.exit(0);
+}
+
 if (command === "serve") {
   const portArg = args.find((a) => a.startsWith("--port="));
   const dataArg = args.find((a) => a.startsWith("--data="));
@@ -105,6 +184,36 @@ if (command === "serve") {
   } catch (e) {
     process.exit(e.status || 1);
   }
+  process.exit(0);
+}
+
+if (command === "--update" || command === "update") {
+  const { execSync } = await import("node:child_process");
+  console.log(`Checking for updates...`);
+  const result = await checkForUpdate(true);
+  if (!result.updateAvailable) {
+    console.log(`✓ You are on the latest version (${TOJ_VERSION}, ${result.localCommit || "local"}).`);
+    process.exit(0);
+  }
+  console.log(`Updating ${result.localCommit} → ${result.remoteCommit}...`);
+  try {
+    execSync(`npm uninstall -g @devskale/jot`, { stdio: "pipe" });
+    execSync(`npm install -g "git+https://github.com/${UPDATE_REPO}.git#${UPDATE_BRANCH}"`, { stdio: "inherit" });
+    console.log(`✓ Updated to ${result.remoteCommit}.`);
+  } catch (e) {
+    console.error("✗ Update failed.");
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
+if (command === "--selfcheck" || command === "selfcheck") {
+  const result = await checkForUpdate(true);
+  console.log(`toj v${TOJ_VERSION}`);
+  console.log(`  commit:  ${result.localCommit || "unknown"}`);
+  console.log(`  remote:  ${result.remoteCommit || "unknown"}`);
+  console.log(`  checked: ${result.lastCheck ? new Date(result.lastCheck).toISOString() : "never"}`);
+  console.log(`  status:  ${result.updateAvailable ? "update available" : "up to date"}`);
   process.exit(0);
 }
 
@@ -579,7 +688,12 @@ Global flags:
   --insecure          Skip TLS certificate verification (self-signed certs)
 
 Server:
-  toj serve [--port=N] [--data=path]      Run the jot server
+  toj serve [--port=N] [--data=path]      Run the toj server
+
+Update:
+  toj --update                            Update toj to latest from GitHub
+  toj --selfcheck                         Show version and update status
+  toj --version                           Show current version
 
 Instance management:
   toj register <name> <baseUrl> <token>   Register with API key (owner)
